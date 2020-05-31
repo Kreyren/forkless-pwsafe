@@ -1,4 +1,4 @@
-image: freebsd/latest
+image: openbsd/latest
 tasks:
   - build: |
       make -C forkless-pwsafe build
