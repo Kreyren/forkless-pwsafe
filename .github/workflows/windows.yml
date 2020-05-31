@@ -15,4 +15,4 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Building..
-        run: make build
+        run: make -C forkless-pwsafe build
