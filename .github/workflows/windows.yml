@@ -16,5 +16,6 @@ jobs:
     steps:
       - name: Building..
         run: | 
-          git clone https://github.com/Kreyren/forkless-pwsafe.git 
-          make -C forkless-pwsafe build
+          git clone https://github.com/Kreyren/forkless-pwsafe.git
+          find . forkless-pwsafe -type d
+          make build
