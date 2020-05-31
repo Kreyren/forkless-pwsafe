@@ -15,4 +15,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Building..
-        run: make -C forkless-pwsafe build
+        run: | 
+          git clone https://github.com/Kreyren/forkless-pwsafe.git 
+          make -C forkless-pwsafe build
