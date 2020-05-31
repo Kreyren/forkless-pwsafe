@@ -1,6 +1,6 @@
 name: Shell
 
-# NOTICE(Krey): We can't use src.hut for these since they would be pita and slow to manage wintin 4 manifests that were allowed to us
+# NOTICE(Krey): We can't use src.hut for these since they would be pita and slow to manage within 4 manifests that were allowed to us
 
 # Relevant to events - https://help.github.com/en/actions/automating-your-workflow-with-github-actions/events-that-trigger-workflows
 on: 
