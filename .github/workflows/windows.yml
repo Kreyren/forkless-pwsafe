@@ -17,5 +17,5 @@ jobs:
       - name: Building..
         run: | 
           git clone https://github.com/Kreyren/forkless-pwsafe.git
-          find . forkless-pwsafe -type d
+          DIR
           make build
