@@ -1,0 +1,15 @@
+name: Darwin
+
+# NOTICE(Krey): We can't use sr.ht since they don't have Windows image handy
+
+# Relevant to events - https://help.github.com/en/actions/automating-your-workflow-with-github-actions/events-that-trigger-workflows
+on: 
+  pull_request:
+    types: [synchronize, opened, reopened, ready_for_review]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Building..
+        run: make build
