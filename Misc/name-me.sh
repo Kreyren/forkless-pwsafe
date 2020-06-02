@@ -1,5 +1,5 @@
 #!/bin/sh
-# Created by Jacob Hrbek <kreyren@rixotstudio.cz> under GPLv3 license <https://www.gnu.org/licenses/gpl-3.0.en.html> in 30/05/2020 for github.com/ronys at https://github.com/pwsafe/pwsafe or at github.com/ronys's preferred license
+# All rights reserved by Jacob Hrbek <kreyren@rixotstudio.cz>
 # Peer-reviewed by: <YOUR_NAME> <YOUR_EMAIL> in <DATE+TIME+TIMEZONE>
 
 # shellcheck shell=sh
@@ -33,6 +33,9 @@
 [ -z "$ARIA2C" ] && ARIA2C="aria2c"
 [ -z "$CHMOD" ] && CHMOD="chmod"
 [ -z "$UNAME" ] && UNAME="uname"
+[ -z "$TR" ] && UNAME="tr"
+[ -z "$SED" ] && UNAME="sed"
+[ -z "$GREP" ] && UNAME="grep"
 
 # Customization of the output
 ## efixme
@@ -263,112 +266,55 @@ rootCheck() { funcname=rootCheck
 
 # Identify system and core
 packageManagement() { funcname=packageManagement
-	edebug "Resolving Kernel used"
-	if command -v "$UNAME" 1>/dev/null; then
-		KERNEL="$("$UNAME" -s)"
-
-		case "$KERNEL" in
-			Linux)
-				edebug "Identified kernel as '$KERNEL'"
-				# Identify distribution
-				if command -v lsb_release 1>/dev/null; then
-					# NOTICE(Krey): Command 'lsb_release -si' returns values alike 'Debian' where logic expects 'debian' -> piped in tr to standardize
-					DISTRO="$(lsb_release -si | tr '[:upper:]' '[:lower:]')"
-				elif [ -f /etc/os-release ]; then
-					DISTRO="$(grep -o "^ID\=.*" /etc/os-release | sed 's#^ID\=##gm')"
-				elif ! command -v lsb_release 1>/dev/null && [ ! -f /etc/os-release ]; then
-					die 1 "Unable to identify distribution since command 'lsb_release' and file /etc/os-release are not present"
-				else
-					die 255 "identifying distro in $myName running logic for Linux"
-				fi
-
-				# FIXME(Krey): Better logic needed
-				if command -v lsb_release 1>/dev/null; then
-					RELEASE="$(lsb_release -cs)"
-				elif ! command -v lsb_release 1>/dev/null; then
-					ewarn "Unable to identify distribution using command 'lsb_release' since it is not present"
-				else
-					die 255 "identifying distribution"
-				fi
-
-				# Install dependencies
-				case "$DISTRO" in debian|ubuntu) efixme "Do not run 'apt-get update' if it's not needed"; esac
-				case "$DISTRO/$RELEASE" in
-					debian/buster)
-						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-						efixme "Implement logic for dependencies"
-						# libwxgtk3.0-dev - Provides wx-config used during the build 
-						$SUDO apt-get install -qy \
-							cmake \
-							gettext \
-							libwxgtk3.0-dev \
-							g++ \
-							pkg-config \
-							libykpers-1-1 \
-							shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
-							funcname="$myName"
-							return 0
-					;;
-					ubuntu/focal)
-						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-						efixme "Implement logic for dependencies"
-						$SUDO apt-get update -q || die 1 "Unable to update $DISTRO's repositories"
-						# libwxgtk3.0-gtk3-dev - Provides wx-config used during the build
-						$SUDO apt-get install -qy \
-							libykpers-1-dev \
-							libwxgtk3.0-gtk3-dev \
-							shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
-							funcname="$myName"
-							return 0
-					;;
-					ubuntu/*)
-						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-						efixme "Implement logic for dependencies"
-					;;
-					archlinux/*)
-						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-						efixme "Implement logic for dependencies" 
-					;;
-					alpine/*)
-						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-						efixme "Implement logic for dependencies" 
-					;;
-					nixos/*)
-						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-						efixme "Implement logic for dependencies" 
-					;;
-					fedora/ThirtyOne)
-						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-						efixme "Implement logic for dependencies" 
-						#$SUDO dnf install -y \
-					;;
-					*) die fixme "Unsupported distribution '$DISTRO' with release '$RELEASE' has been parsed in $myName located at $0"
-				esac
-			;;
-			FreeBSD)
-				edebug "Identified kernel as '$KERNEL'"
-				efixme "Implement logic for dependencies"
-			;;
-			OpenBSD)
-				edebug "Identified kernel as '$KERNEL'"
-				efixme "Implement logic for dependencies"
-			;;
-			Redox)
-				edebug "Identified kernel as '$KERNEL'"
-				efixme "Implement logic for dependencies"
-			;;
-			Windows)
-				edebug "Identified kernel as '$KERNEL'"
-				efixme "Implement logic for dependencies"
-			;;
-			*) die fixme "Platform '$("$UNAME" -s)' is not supported by this script"
-		esac
-	elif ! command -v "$UNAME" 1>/dev/null; then
-		# FIXME(Krey): Logic implementation?
-		die 1 "Required command uname is not available on this environment, unable to identify kernel"
-	else
-		die 255 "processing uname with value $("$UNAME" -s)"
-	fi
+	efixme "Make $funcname to read from a file"
+	case "$KERNEL" in
+		Linux)
+			case "$DISTRO/$RELEASE"
+				debian/buster)
+					efixme "Implement logic for dependencies"
+					# libwxgtk3.0-dev - Provides wx-config used during the build 
+					$SUDO apt-get install -qy \
+						cmake \
+						gettext \
+						libwxgtk3.0-dev \
+						g++ \
+						pkg-config \
+						libykpers-1-1 \
+						shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
+				ubuntu/focal)
+					efixme "Implement logic for dependencies"
+					$SUDO apt-get update -q || die 1 "Unable to update $DISTRO's repositories"
+					# libwxgtk3.0-gtk3-dev - Provides wx-config used during the build
+					$SUDO apt-get install -qy \
+						libykpers-1-dev \
+						libwxgtk3.0-gtk3-dev \
+						shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
+				;;
+				ubuntu/*)
+					efixme "Implement logic for dependencies"
+				;;
+				archlinux/*)
+					efixme "Implement logic for dependencies" 
+				;;
+				alpine/*)
+					efixme "Implement logic for dependencies" 
+				;;
+				nixos/*)
+					efixme "Implement logic for dependencies" 
+				;;
+				fedora/ThirtyOne)
+					efixme "Implement logic for dependencies" 
+					#$SUDO dnf install -y \
+				;;
+				*) die 1 "Unexpected combination of Linux Distribution '$DISTRO' and it's release '$RELEASE'"
+			esac
+		FreeBSD) efixme "Implement logic for package installation for $KERNEL" ;;
+		Redox) efixme "Implement logic for package installation for $KERNEL" ;;
+		Darwin) efixme "Implement logic for package installation for $KERNEL" ;;
+		OpenBSD) efixme "Implement logic for package installation for $KERNEL" ;;
+		Windows) efixme "Implement logic for package installation for $KERNEL" ;;
+		*) die 1 "Unexpected kernel '$KERNEL'"
+	esac
 }
 
 # Identify system
@@ -382,8 +328,8 @@ if command -v "$UNAME" 1>/dev/null; then
 			# Assume Linux Distro and release
 			# NOTICE(Krey): We are expecting this to return a lowercase value
 			if command -v "$LSB_RELEASE" 1>/dev/null; then
-				assumedDistro=$("$LSB_RELEASE" -si | "$TR" :[upper]: :[lower]:)
-				assumedRelease=$("$LSB_RELEASE" -cs | "$TR" :[upper]: :[lower]:)
+				assumedDistro="$("$LSB_RELEASE" -si | "$TR" :[upper]: :[lower]:)"
+				assumedRelease="$("$LSB_RELEASE" -cs | "$TR" :[upper]: :[lower]:)"
 			elif ! command -v "$LSB_RELEASE" 1>/dev/null && [ -f /etc/os-release ]; then
 				assumedDistro="$("$GREP" -o "^ID\=.*" /etc/os-release | "$SED" s/ID=//gm)"
 				assumedRelease="$("$GREP" -o"^VERSION_CODENAME\=.*" /etc/os-release | "$SED" s/VERSION_CODENAME=//gm)"
@@ -394,26 +340,31 @@ if command -v "$UNAME" 1>/dev/null; then
 			fi
 
 			edebug "Identified distribution as '$assumedDistro'"
+			edebug "Identified distribution release as '$assumedRelease'"
 
 			# Verify Linux Distro
+			efixme "Add sanitization logic for other linux distributions"
 			case "$assumedDistro" in
 				ubuntu | debian | fedora | nixos | opensuse | gentoo | exherbo)
 					DISTRO="$assumedDistro"
 				;;
 				*) die fixme "Unexpected Linux distribution '$assumedDistro' has been detected."
 			esac
+
+			# Verify Linux Distro Release
+			efixme "Sanitize verification of linux distro release"
+			assumedRelease="$RELEASE"
 		;;
 		FreeBSD | Redox | Darwin | Windows)
 			KERNEL="$unameKernel"
 		;;
+		*) die 255 "Unexpected kernel '$unameKernel'"
 	esac
-elif command -v "$UNAME" 1>/dev/null; then
+elif ! command -v "$UNAME" 1>/dev/null; then
 	die 1 "Standard command '$UNAME' is not available on this system, unable to identify kernel"
 else
 	die 255 "Identifying system"
 fi
-
-# Identify 
 
 # Argument management
 while [ "$#" -gt 0 ]; do case "$1" in
