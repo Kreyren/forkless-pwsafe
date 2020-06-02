@@ -1,5 +1,6 @@
 #!/bin/sh
 # Created by Jacob Hrbek <kreyren@rixotstudio.cz> under GPLv3 license <https://www.gnu.org/licenses/gpl-3.0.en.html> in 30/05/2020 for github.com/ronys at https://github.com/pwsafe/pwsafe or at github.com/ronys's preferred license
+# Peer-reviewed by: <YOUR_NAME> <YOUR_EMAIL> in <DATE+TIME+TIMEZONE>
 
 # shellcheck shell=sh
 
@@ -10,9 +11,9 @@
 ###! - FIXME-DOCS(Krey): Defined in die()
 ###! Platforms:
 ###! - [ ] Linux
-###!  - [X] Debian (02/06/2020-03:28CET)
-###!  - [X] Ubuntu (02/06/2020-03:28CET)
-###!  - [X] Fedora (02/06/2020-03:28CET)
+###!  - [ ] Debian (02/06/2020-03:28CET)
+###!  - [ ] Ubuntu (02/06/2020-03:28CET)
+###!  - [ ] Fedora (02/06/2020-03:28CET)
 ###!  - [ ] NixOS
 ###!  - [ ] Archlinux
 ###!  - [ ] Alpine
@@ -226,32 +227,42 @@ efixme() { funcname=efixme
 }; alias efixme='efixme "$LINENO"'
 
 # Resolve root
-edebug "Resolving root on user with ID '$(id -u)"
-if [ "$(id -u)" = 0 ]; then
-	edebug "Script has been executed as user with ID 0, assuming root"
-	# NOTICE(Krey): We are prefixing root commands with '$SUDO', this is done to make sure that we are not using sudo here
-	unset SUDO
-# NOTICE(Krey): The ID 33333 is used by gitpod
-elif [ "$(id -u)" = 1000 ] || [ "$(id -u)" = 33333 ]; then
-	ewarn "Script $myName is not expected to run as non-root, trying to elevate root.."
-	if command -v sudo 1>/dev/null; then
-		einfo "Found 'sudo' that can be used for root elevation"
-		SUDO=sudo
-	elif command -v su 1>/dev/null; then
-		einfo "Found 'su' that can be used for a root elevation"
-		ewarn "This will require the end-user to parse a root password multiple times assuming that root has a password set"
-		SUDO=su
-	elif ! command -v sudo 1>/dev/null && ! command -v su 1>/dev/null; then
-		die 3 "Script $myName depends on root permission to install packages where commands 'sudo' nor 'su' are available for root elevation"
+rootCheck() { funcname=rootCheck
+	edebug "Resolving root on user with ID '$(id -u)"
+	if [ "$(id -u)" = 0 ]; then
+		edebug "Script has been executed as user with ID 0, assuming root"
+		# NOTICE(Krey): We are prefixing root commands with '$SUDO', this is done to make sure that we are not using sudo here
+		unset SUDO
+		funcname="$myName"
+		return 0
+	# NOTICE(Krey): The ID 33333 is used by gitpod
+	elif [ "$(id -u)" = 1000 ] || [ "$(id -u)" = 33333 ]; then
+		ewarn "Script $myName is not expected to run as non-root, trying to elevate root.."
+		if command -v sudo 1>/dev/null; then
+			einfo "Found 'sudo' that can be used for root elevation"
+			SUDO=sudo
+			funcname="$myName"
+			return 0
+		elif command -v su 1>/dev/null; then
+			einfo "Found 'su' that can be used for a root elevation"
+			ewarn "This will require the end-user to parse a root password multiple times assuming that root has a password set"
+			SUDO=su
+			funcname="$myName"
+			return 0
+		elif ! command -v sudo 1>/dev/null && ! command -v su 1>/dev/null; then
+			die 3 "Script $myName depends on root permission to install packages where commands 'sudo' nor 'su' are available for root elevation"
+			funcname="$myName"
+			return 0
+		else
+			die 225 "processing root on non-root"
+		fi
 	else
-		die 225 "processing root on non-root"
+		die 3 "Unknown user ID '$(id -u)' has been parsed in script $myName"
 	fi
-else
-	die 3 "Unknown user ID '$(id -u)' has been parsed in script $myName"
-fi
+}
 
 # Identify system and core
-packageManagement() {
+packageManagement() { funcname=packageManagement
 	edebug "Resolving Kernel used"
 	if command -v "$UNAME" 1>/dev/null; then
 		KERNEL="$("$UNAME" -s)"
@@ -281,9 +292,7 @@ packageManagement() {
 				fi
 
 				# Install dependencies
-				case "$DISTRO" in debian|ubuntu)
-					efixme "Do not run 'apt-get update' if it's not needed"
-				esac
+				case "$DISTRO" in debian|ubuntu) efixme "Do not run 'apt-get update' if it's not needed"; esac
 				case "$DISTRO/$RELEASE" in
 					debian/buster)
 						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
@@ -297,6 +306,8 @@ packageManagement() {
 							pkg-config \
 							libykpers-1-1 \
 							shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
+							funcname="$myName"
+							return 0
 					;;
 					ubuntu/focal)
 						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
@@ -307,6 +318,8 @@ packageManagement() {
 							libykpers-1-dev \
 							libwxgtk3.0-gtk3-dev \
 							shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
+							funcname="$myName"
+							return 0
 					;;
 					ubuntu/*)
 						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
@@ -358,7 +371,49 @@ packageManagement() {
 	fi
 }
 
-# EX
+# Identify system
+if command -v "$UNAME" 1>/dev/null; then
+	unameKernel="$("$UNAME" -s)"
+	edebug "Identified the kernel as '$unameKernel"
+	case "$unameKernel" in
+		Linux)
+			KERNEL="$unameKernel"
+
+			# Assume Linux Distro and release
+			# NOTICE(Krey): We are expecting this to return a lowercase value
+			if command -v "$LSB_RELEASE" 1>/dev/null; then
+				assumedDistro=$("$LSB_RELEASE" -si | "$TR" :[upper]: :[lower]:)
+				assumedRelease=$("$LSB_RELEASE" -cs | "$TR" :[upper]: :[lower]:)
+			elif ! command -v "$LSB_RELEASE" 1>/dev/null && [ -f /etc/os-release ]; then
+				assumedDistro="$("$GREP" -o "^ID\=.*" /etc/os-release | "$SED" s/ID=//gm)"
+				assumedRelease="$("$GREP" -o"^VERSION_CODENAME\=.*" /etc/os-release | "$SED" s/VERSION_CODENAME=//gm)"
+			elif ! command -v "$LSB_RELEASE" 1>/dev/null && [ ! -f /etc/os-release ]; then
+				die 1 "Unable to identify linux distribution using  command 'lsb_release' nor file '/etc/os-release'"
+			else
+				die 255 "attempting to assume linux distro and release"
+			fi
+
+			edebug "Identified distribution as '$assumedDistro'"
+
+			# Verify Linux Distro
+			case "$assumedDistro" in
+				ubuntu | debian | fedora | nixos | opensuse | gentoo | exherbo)
+					DISTRO="$assumedDistro"
+				;;
+				*) die fixme "Unexpected Linux distribution '$assumedDistro' has been detected."
+			esac
+		;;
+		FreeBSD | Redox | Darwin | Windows)
+			KERNEL="$unameKernel"
+		;;
+	esac
+elif command -v "$UNAME" 1>/dev/null; then
+	die 1 "Standard command '$UNAME' is not available on this system, unable to identify kernel"
+else
+	die 255 "Identifying system"
+fi
+
+# Identify 
 
 # Argument management
 while [ "$#" -gt 0 ]; do case "$1" in
