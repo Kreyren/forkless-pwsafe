@@ -1,4 +1,4 @@
-#!/usr/bin/busybox sh
+#!/bin/sh
 # Created by Jacob Hrbek <kreyren@rixotstudio.cz> under GPLv3 license <https://www.gnu.org/licenses/gpl-3.0.en.html> in 30/05/2020 for github.com/ronys at https://github.com/pwsafe/pwsafe or at github.com/ronys's preferred license
 
 # shellcheck shell=sh
@@ -6,15 +6,16 @@
 ###! Script to provide dependencies to work on this repository
 ###! Requires:
 ###! - Command 'lsb_release' to identify distribution on linux
-###! - Command 'busybox' with 'sh' to install dependencies
-###! - Command 'git' to clone the repository (used for tests if you already have the repository)
 ###! Exit codes:
 ###! - FIXME-DOCS(Krey): Defined in die()
 ###! Platforms:
 ###! - [ ] Linux
-###!  - [ ] Debian
-###!  - [ ] Ubuntu
-###!  - [ ] Fedora
+###!  - [X] Debian (02/06/2020-03:28CET)
+###!  - [X] Ubuntu (02/06/2020-03:28CET)
+###!  - [X] Fedora (02/06/2020-03:28CET)
+###!  - [ ] NixOS
+###!  - [ ] Archlinux
+###!  - [ ] Alpine
 ###! - [ ] FreeBSD
 ###! - [ ] Darwin
 ###! - [ ] Redox
@@ -23,8 +24,6 @@
 ###! - [ ] Windows/Cygwin
 ###! Resources:
 ###! - https://pkgs.org | To search Linux distros for files and package informations
-
-# NOTICE(Krey): Do not double-quote '$SUDO', we are expecting spaces since `"" echo something` doesn't work
 
 # Command overrides
 [ -z "$PRINTF" ] && PRINTF="printf"
@@ -80,56 +79,57 @@ myName="${0##*/}"
 # Used to prefix logs with timestemps, uses ISO 8601 by default
 logPrefix="[ $(date -u +"%Y-%m-%dT%H:%M:%SZ") ] "
 # Path to which we will save logs
-logPath="$HOME/.${myName%%.sh}.log"
+# NOTICE(Krey): To avoid storing file '$HOME/.some-name.sh.log' we are stripping the '.sh' here
+logPath="${XDG_DATA_HOME:-$HOME/.local/share}/${myName%%.sh}.log"
 
 # inicialize the script in logs
-$PRINTF '%s\n' "Started $myName on $($UNAME -s) at $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$logPath"
+"$PRINTF" '%s\n' "Started $myName on $("$UNAME" -s) at $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$logPath"
 
 # NOTICE(Krey): Aliases are required for posix-compatible line output (https://gist.github.com/Kreyren/4fc76d929efbea1bc874760e7f78c810)
 die() { funcname=die
 	case "$2" in
 		38|fixme) # FIXME
 			if [ "$DEBUG" = 0 ] || [ -z "$DEBUG" ]; then
-				$PRINTF "$DIE_FORMAT_STRING_FIXME" "$3"
-				$PRINTF "$DIE_FORMAT_STRING_FIXME_LOG" "$3" >> "$logPath"
+				"$PRINTF" "$DIE_FORMAT_STRING_FIXME" "$3"
+				"$PRINTF" "$DIE_FORMAT_STRING_FIXME_LOG" "$3" >> "$logPath"
 				unset funcname
 			elif [ "$DEBUG" = 1 ]; then
-				$PRINTF "$DIE_FORMAT_STRING_FIXME_DEBUG" "$3"
-				$PRINTF "$DIE_FORMAT_STRING_FIXME_DEBUG_LOG" "$3" >> "$logPath"
+				"$PRINTF" "$DIE_FORMAT_STRING_FIXME_DEBUG" "$3"
+				"$PRINTF" "$DIE_FORMAT_STRING_FIXME_DEBUG_LOG" "$3" >> "$logPath"
 				unset funcname
 			else
 				# NOTICE(Krey): Do not use die() here
-				$PRINTF 'FATAL: %s\n' "Unexpected happend while processing variable DEBUG with value '$DEBUG' in $funcname"
+				"$PRINTF" 'FATAL: %s\n' "Unexpected happend while processing variable DEBUG with value '$DEBUG' in $funcname"
 			fi
 
 			exit 38
 		;;
 		255) # Unexpected trap
 			if [ "$DEBUG" = 0 ] || [ -z "$DEBUG" ]; then
-				$PRINTF "$DIE_FORMAT_STRING_UNEXPECTED" "$3"
-				$PRINTF "$DIE_FORMAT_STRING_UNEXPECTED_LOG" "$3" >> "$logPath"
+				"$PRINTF" "$DIE_FORMAT_STRING_UNEXPECTED" "$3"
+				"$PRINTF" "$DIE_FORMAT_STRING_UNEXPECTED_LOG" "$3" >> "$logPath"
 				unset funcname
 			elif [ "$DEBUG" = 1 ]; then
-				$PRINTF "$DIE_FORMAT_STRING_UNEXPECTED_DEBUG" "$3"
-				$PRINTF "$DIE_FORMAT_STRING_UNEXPECTED_DEBUG_LOG" "$3" >> "$logPath"
+				"$PRINTF" "$DIE_FORMAT_STRING_UNEXPECTED_DEBUG" "$3"
+				"$PRINTF" "$DIE_FORMAT_STRING_UNEXPECTED_DEBUG_LOG" "$3" >> "$logPath"
 				unset funcname
 			else
 				# NOTICE(Krey): Do not use die() here
-				$PRINTF "$DIE_FORMAT_STRING" "Unexpected happend while processing variable DEBUG with value '$DEBUG' in $funcname"
+				"$PRINTF" "$DIE_FORMAT_STRING" "Unexpected happend while processing variable DEBUG with value '$DEBUG' in $funcname"
 			fi
 		;;
 		*)
 			if [ "$DEBUG" = 0 ] || [ -z "$DEBUG" ]; then
-				$PRINTF "$DIE_FORMAT_STRING" "$3"
-				$PRINTF "$DIE_FORMAT_STRING_LOG" "$3" >> "$logPath"
+				"$PRINTF" "$DIE_FORMAT_STRING" "$3"
+				"$PRINTF" "$DIE_FORMAT_STRING_LOG" "$3" >> "$logPath"
 				unset funcname
 			elif [ "$DEBUG" = 1 ]; then
-				$PRINTF "$DIE_FORMAT_STRING_DEBUG" "$3"
-				$PRINTF "$DIE_FORMAT_STRING_DEBUG_LOG" "$3" >> "$logPath"
+				"$PRINTF" "$DIE_FORMAT_STRING_DEBUG" "$3"
+				"$PRINTF" "$DIE_FORMAT_STRING_DEBUG_LOG" "$3" >> "$logPath"
 				unset funcname
 			else
 				# NOTICE(Krey): Do not use die() here
-				$PRINTF 'FATAL: %s\n' "Unexpected happend while processing variable DEBUG with value '$DEBUG' in $funcname"
+				"$PRINTF" 'FATAL: %s\n' "Unexpected happend while processing variable DEBUG with value '$DEBUG' in $funcname"
 			fi
 	esac
 
@@ -141,13 +141,13 @@ die() { funcname=die
 
 einfo() { funcname=einfo
 	if [ "$DEBUG" = 0 ] || [ -z "$DEBUG" ]; then
-		$PRINTF "$EINFO_FORMAT_STRING" "$2"
-		$PRINTF "$EINFO_FORMAT_STRING_LOG" "$2" >> "$logPath"
+		"$PRINTF" "$EINFO_FORMAT_STRING" "$2"
+		"$PRINTF" "$EINFO_FORMAT_STRING_LOG" "$2" >> "$logPath"
 		unset funcname
 		return 0
 	elif [ "$DEBUG" = 1 ]; then
-		$PRINTF "$EINFO_FORMAT_STRING_DEBUG" "$2"
-		$PRINTF "$EINFO_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
+		"$PRINTF" "$EINFO_FORMAT_STRING_DEBUG" "$2"
+		"$PRINTF" "$EINFO_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
 		unset funcname
 		return 0
 	else
@@ -157,13 +157,13 @@ einfo() { funcname=einfo
 
 ewarn() { funcname=ewarn
 	if [ "$DEBUG" = 0 ] || [ -z "$DEBUG" ]; then
-		$PRINTF "$EWARN_FORMAT_STRING" "$2"
-		$PRINTF "$EWARN_FORMAT_STRING_LOG" "$2" >> "$logPath"
+		"$PRINTF" "$EWARN_FORMAT_STRING" "$2"
+		"$PRINTF" "$EWARN_FORMAT_STRING_LOG" "$2" >> "$logPath"
 		unset funcname
 		return 0
 	elif [ "$DEBUG" = 1 ]; then
-		$PRINTF "$EWARN_FORMAT_STRING_DEBUG" "$2"
-		$PRINTF "$EWARN_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
+		"$PRINTF" "$EWARN_FORMAT_STRING_DEBUG" "$2"
+		"$PRINTF" "$EWARN_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
 		unset funcname
 		return 0
 	else
@@ -173,13 +173,13 @@ ewarn() { funcname=ewarn
 
 eerror() { funcname=eerror
 	if [ "$DEBUG" = 0 ] || [ -z "$DEBUG" ]; then
-		$PRINTF "$EERROR_FORMAT_STRING" "$2"
-		$PRINTF "$EERROR_FORMAT_STRING_LOG" "$2" >> "$logPath"
+		"$PRINTF" "$EERROR_FORMAT_STRING" "$2"
+		"$PRINTF" "$EERROR_FORMAT_STRING_LOG" "$2" >> "$logPath"
 		unset funcname
 		return 0
 	elif [ "$DEBUG" = 1 ]; then
-		$PRINTF "$EERROR_FORMAT_STRING_DEBUG" "$2"
-		$PRINTF "$EERROR_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
+		"$PRINTF" "$EERROR_FORMAT_STRING_DEBUG" "$2"
+		"$PRINTF" "$EERROR_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
 		unset funcname
 		return 0
 	else
@@ -189,13 +189,13 @@ eerror() { funcname=eerror
 
 edebug() { funcname=edebug
 	if [ "$DEBUG" = 0 ] || [ -z "$DEBUG" ]; then
-		$PRINTF "$EDEBUG_FORMAT_STRING" "$2"
-		$PRINTF "$EDEBUG_FORMAT_STRING_LOG" "$2" >> "$logPath"
+		"$PRINTF" "$EDEBUG_FORMAT_STRING" "$2"
+		"$PRINTF" "$EDEBUG_FORMAT_STRING_LOG" "$2" >> "$logPath"
 		unset funcname
 		return 0
 	elif [ "$DEBUG" = 1 ]; then
-		$PRINTF "$EDEBUG_FORMAT_STRING_DEBUG" "$2"
-		$PRINTF "$EDEBUG_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
+		"$PRINTF" "$EDEBUG_FORMAT_STRING_DEBUG" "$2"
+		"$PRINTF" "$EDEBUG_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
 		unset funcname
 		return 0
 	else
@@ -208,13 +208,13 @@ efixme() { funcname=efixme
 		true
 	elif [ "$IGNORE_FIXME" = 0 ] || [ -z "$IGNORE_FIXME" ]; then
 		if [ "$DEBUG" = 0 ] || [ -z "$DEBUG" ]; then
-			$PRINTF "$EFIXME_FORMAT_STRING" "$2"
-			$PRINTF "$EFIXME_FORMAT_STRING" "$2" >> "$logPath"
+			"$PRINTF" "$EFIXME_FORMAT_STRING" "$2"
+			"$PRINTF" "$EFIXME_FORMAT_STRING" "$2" >> "$logPath"
 			unset funcname
 			return 0
 		elif [ "$DEBUG" = 1 ]; then
-			$PRINTF "$EFIXME_FORMAT_STRING_DEBUG" "$2"
-			$PRINTF "$EFIXME_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
+			"$PRINTF" "$EFIXME_FORMAT_STRING_DEBUG" "$2"
+			"$PRINTF" "$EFIXME_FORMAT_STRING_DEBUG_LOG" "$2" >> "$logPath"
 			unset funcname
 			return 0
 		else
@@ -251,107 +251,132 @@ else
 fi
 
 # Identify system and core
-edebug "Resolving Kernel used"
-if command -v $UNAME 1>/dev/null; then
-	KERNEL="$($UNAME -s)"
+packageManagement() {
+	edebug "Resolving Kernel used"
+	if command -v "$UNAME" 1>/dev/null; then
+		KERNEL="$("$UNAME" -s)"
 
-	case "$KERNEL" in
-		Linux)
-			edebug "Identified kernel as '$KERNEL'"
-			# Identify distribution
-			if command -v lsb_release 1>/dev/null; then
-				# NOTICE(Krey): Command 'lsb_release -si' returns values alike 'Debian' where logic expects 'debian' -> piped in tr to standardize
-				DISTRO="$(lsb_release -si | tr '[:upper:]' '[:lower:]')"
-			elif [ -f /etc/os-release ]; then
-				DISTRO="$(grep -o "^ID\=.*" /etc/os-release | sed 's#^ID\=##gm')"
-			elif ! command -v lsb_release 1>/dev/null && [ ! -f /etc/os-release ]; then
-				die 1 "Unable to identify distribution since command 'lsb_release' and file /etc/os-release are not present"
-			else
-				die 255 "identifying distro in $myName running logic for Linux"
-			fi
+		case "$KERNEL" in
+			Linux)
+				edebug "Identified kernel as '$KERNEL'"
+				# Identify distribution
+				if command -v lsb_release 1>/dev/null; then
+					# NOTICE(Krey): Command 'lsb_release -si' returns values alike 'Debian' where logic expects 'debian' -> piped in tr to standardize
+					DISTRO="$(lsb_release -si | tr '[:upper:]' '[:lower:]')"
+				elif [ -f /etc/os-release ]; then
+					DISTRO="$(grep -o "^ID\=.*" /etc/os-release | sed 's#^ID\=##gm')"
+				elif ! command -v lsb_release 1>/dev/null && [ ! -f /etc/os-release ]; then
+					die 1 "Unable to identify distribution since command 'lsb_release' and file /etc/os-release are not present"
+				else
+					die 255 "identifying distro in $myName running logic for Linux"
+				fi
 
-			# FIXME(Krey): Better logic needed
-			if command -v lsb_release 1>/dev/null; then
-				RELEASE="$(lsb_release -cs)"
-			elif ! command -v lsb_release 1>/dev/null; then
-				ewarn "Unable to identify distribution using command 'lsb_release' since it is not present"
-			else
-				die 255 "Identifying distribution"
-			fi
+				# FIXME(Krey): Better logic needed
+				if command -v lsb_release 1>/dev/null; then
+					RELEASE="$(lsb_release -cs)"
+				elif ! command -v lsb_release 1>/dev/null; then
+					ewarn "Unable to identify distribution using command 'lsb_release' since it is not present"
+				else
+					die 255 "identifying distribution"
+				fi
 
-			# Install dependencies
-			case "$DISTRO" in debian|ubuntu)
-				efixme "Do not run 'apt-get update' if it's not needed"
-			esac
-			case "$DISTRO/$RELEASE" in
-				debian/buster)
-					edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-					efixme "Implement logic for dependencies"
-					# libwxgtk3.0-dev - Provides wx-config used during the build 
-					$SUDO apt-get install -qy \
-						cmake \
-						gettext \
-						libwxgtk3.0-dev \
-						g++ \
-						pkg-config \
-						libykpers-1-1 \
-						shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
-				;;
-				ubuntu/focal)
-					edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-					efixme "Implement logic for dependencies"
-					$SUDO apt-get update -q || die 1 "Unable to update $DISTRO's repositories"
-					# libwxgtk3.0-gtk3-dev - Provides wx-config used during the build
-					$SUDO apt-get install -qy \
-						libykpers-1-dev \
-						libwxgtk3.0-gtk3-dev \
-						shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
-				;;
-				ubuntu/*)
-					edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-					efixme "Implement logic for dependencies"
-				;;
-				archlinux/*)
-					edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-					efixme "Implement logic for dependencies" 
-				;;
-				alpine/*)
-					edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-					efixme "Implement logic for dependencies" 
-				;;
-				nixos/*)
-					edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-					efixme "Implement logic for dependencies" 
-				;;
-				fedora/ThirtyOne)
-					edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
-					efixme "Implement logic for dependencies" 
-					#$SUDO dnf install -y \
-				;;
-				*) die fixme "Unsupported distribution '$DISTRO' with release '$RELEASE' has been parsed in $myName located at $0"
-			esac
-		;;
-		FreeBSD)
-			edebug "Identified kernel as '$KERNEL'"
-			efixme "Implement logic for dependencies"
-		;;
-		OpenBSD)
-			edebug "Identified kernel as '$KERNEL'"
-			efixme "Implement logic for dependencies"
-		;;
-		Redox)
-			edebug "Identified kernel as '$KERNEL'"
-			efixme "Implement logic for dependencies"
-		;;
-		Windows)
-			edebug "Identified kernel as '$KERNEL'"
-			efixme "Implement logic for dependencies"
-		;;
-		*) die fixme "Platform '$($UNAME -s)' is not supported by this script"
-	esac
-elif ! command -v $UNAME 1>/dev/null; then
-	# FIXME(Krey): Logic implementation?
-	die 1 "Required command uname is not available on this environment, unable to identify kernel"
-else
-	die 255 "processing uname with value $($UNAME -s)"
-fi
+				# Install dependencies
+				case "$DISTRO" in debian|ubuntu)
+					efixme "Do not run 'apt-get update' if it's not needed"
+				esac
+				case "$DISTRO/$RELEASE" in
+					debian/buster)
+						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
+						efixme "Implement logic for dependencies"
+						# libwxgtk3.0-dev - Provides wx-config used during the build 
+						$SUDO apt-get install -qy \
+							cmake \
+							gettext \
+							libwxgtk3.0-dev \
+							g++ \
+							pkg-config \
+							libykpers-1-1 \
+							shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
+					;;
+					ubuntu/focal)
+						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
+						efixme "Implement logic for dependencies"
+						$SUDO apt-get update -q || die 1 "Unable to update $DISTRO's repositories"
+						# libwxgtk3.0-gtk3-dev - Provides wx-config used during the build
+						$SUDO apt-get install -qy \
+							libykpers-1-dev \
+							libwxgtk3.0-gtk3-dev \
+							shellcheck || die 1 "Unable to install all required dependencies on $DISTRO"
+					;;
+					ubuntu/*)
+						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
+						efixme "Implement logic for dependencies"
+					;;
+					archlinux/*)
+						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
+						efixme "Implement logic for dependencies" 
+					;;
+					alpine/*)
+						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
+						efixme "Implement logic for dependencies" 
+					;;
+					nixos/*)
+						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
+						efixme "Implement logic for dependencies" 
+					;;
+					fedora/ThirtyOne)
+						edebug "Identified distribution as '$DISTRO' with release '$RELEASE"
+						efixme "Implement logic for dependencies" 
+						#$SUDO dnf install -y \
+					;;
+					*) die fixme "Unsupported distribution '$DISTRO' with release '$RELEASE' has been parsed in $myName located at $0"
+				esac
+			;;
+			FreeBSD)
+				edebug "Identified kernel as '$KERNEL'"
+				efixme "Implement logic for dependencies"
+			;;
+			OpenBSD)
+				edebug "Identified kernel as '$KERNEL'"
+				efixme "Implement logic for dependencies"
+			;;
+			Redox)
+				edebug "Identified kernel as '$KERNEL'"
+				efixme "Implement logic for dependencies"
+			;;
+			Windows)
+				edebug "Identified kernel as '$KERNEL'"
+				efixme "Implement logic for dependencies"
+			;;
+			*) die fixme "Platform '$("$UNAME" -s)' is not supported by this script"
+		esac
+	elif ! command -v "$UNAME" 1>/dev/null; then
+		# FIXME(Krey): Logic implementation?
+		die 1 "Required command uname is not available on this environment, unable to identify kernel"
+	else
+		die 255 "processing uname with value $("$UNAME" -s)"
+	fi
+}
+
+# EX
+
+# Argument management
+while [ "$#" -gt 0 ]; do case "$1" in
+	install-deps)
+		packageManagement
+	;;
+	test-docker-debian)
+		efixme "Implement logic to make sure that docker is available"
+		die fixme "Implement tests for debian on docker"
+		$SUDO docker run debian sh -c "true \
+			&& apt-get update -q \
+			&& apt-get install -qy lsb-release \
+			&& sh $0"
+	;;
+	--help|help)
+		efixme "HELP_MESSAGE"
+	;;
+	*)
+		die 2 "FIXME_MESSAGE"
+	;;
+esac; done
